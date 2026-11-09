@@ -494,7 +494,7 @@ table.tbl { border-collapse: collapse; width: 100%; font-size: 12.5px; }
  * Settings. API_URL = the Apps Script web app (/exec). Empty or ?demo = demo mode with made-up data.
  * This file is public: never put a PIN, key or real figures in it.
  * ===================================================================== */
-const CONFIG = { API_URL: '' };
+const CONFIG = { API_URL: 'https://script.google.com/macros/s/AKfycby5PiCPb6FfrcCGdifZ8nL7bhlsjRD0ziPQoOiaBPcL6bQ_Hr9oKH5NScgKdyzkVu_HEg/exec' };
 const params = new URLSearchParams(location.search);
 const DEMO = params.has('demo') || !CONFIG.API_URL;
 const SHARP_MIN = 7;            // below = "blurry". Sample plates 2026-11-10: sharp 13-65, 1 px blur 7-31, 3 px blur 3-9
