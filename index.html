@@ -427,7 +427,7 @@ function renderLive(d) {
   d.feed.forEach(s => S.seenScans.add(s.id));
   $('#feed').innerHTML = `<tr><th>Photo</th><th>Time</th><th>Result</th><th>What</th><th>Number read</th><th>Packing list</th><th>By</th><th>Shipment</th></tr>` +
     (d.feed.length ? d.feed.map(s => `<tr class="${!first && newOnes.has(s.id) ? 'new' : ''}">
-      <td>${s.thumb ? `<img class="t" src="${s.thumb}" data-photo="${esc(s.id)}" alt="">` : `<button class="btn sm" data-photo="${esc(s.id)}">${icon('image')}</button>`}</td>
+      <td>${s.kind === 'ENGINE-EYE' ? '<span class="small muted">by eye</span>' : s.thumb ? `<img class="t" src="${s.thumb}" data-photo="${esc(s.id)}" alt="">` : `<button class="btn sm" data-photo="${esc(s.id)}">${icon('image')}</button>`}</td>
       <td>${fmtT(s.when)}</td><td>${resPill(s.result)}</td><td>${esc(s.kind)}${s.line ? ' · line ' + s.line : ''}</td>
       <td class="c">${esc(s.read || '—')}</td><td class="c" style="opacity:.75">${esc(s.expected || '')}</td><td>${esc(s.operator)} <span class="muted small">${esc(s.station)}</span></td><td>${esc(s.shipment)}</td></tr>`).join('')
       : '<tr><td colspan="8" class="muted">No photos yet.</td></tr>');
@@ -438,16 +438,19 @@ const resPill = r => `<span class="pill ${r === 'OK' ? 'g' : r === 'NOT OK' ? 'r
 
 function issueCard(i) {
   const sh = (S.live.shipments || []).find(s => s.id === i.shipment);
-  const kinds = i.kind === 'ENGINE' ? ['Chassis photo', 'Engine photo'] : ['Chassis photo'];
-  const chips = i.kind === 'ENGINE' ? ['Engine number does not match — bike set aside', 'Engine belongs to another bike — set aside', 'Stamping unclear — set aside for checking']
+  const chips = i.kind === 'ENGINE' ? ['Engine number does not match — bike set aside', 'Engine belongs to another bike — set aside', 'Packing list engine number to be checked']
     : ['Chassis not in packing list — set aside', 'Short / wrong engraving — sent back', 'Double engraving — sent back', 'Same bike photographed twice'];
+  const fig = (id, k) => k === 0
+    ? `<figure>${i.thumbs[k] ? `<img class="thumb" src="${i.thumbs[k]}" data-photo="${esc(id)}" alt="">` : `<div class="thumb none" data-photo="${esc(id)}">Open photo</div>`}<figcaption>Chassis photo · ${esc(id)}</figcaption></figure>`
+    : `<figure><div class="thumb none" style="cursor:default;text-align:center;padding:8px">Engine number checked by eye<br>Worker said: DIFFERENT${i.read ? '<br><b class="mono">' + esc(i.read) + '</b>' : ''}</div><figcaption>Engine check · ${esc(id)}</figcaption></figure>`;
   return `<div class="issue" data-id="${esc(i.id)}">
     <div class="hd"><span class="tag">NOT OK · ${esc(i.kind)}</span><b>${esc(i.id)}</b>
       <span>${fmtT(i.when)} · ${esc(i.operator)} (${esc(i.station)}) · ${esc(sh ? sh.name : i.shipment)}${i.line ? ' · line ' + i.line : ''}</span></div>
     <div class="issue-body">
-      <div class="thumbs">${i.scans.map((id, k) => `<figure>${i.thumbs[k] ? `<img class="thumb" src="${i.thumbs[k]}" data-photo="${esc(id)}" alt="">` : `<div class="thumb none" data-photo="${esc(id)}">Open photo</div>`}<figcaption>${kinds[k] || 'Photo'} · ${esc(id)}</figcaption></figure>`).join('')}</div>
+      <div class="thumbs">${i.scans.map(fig).join('')}</div>
       <div>
-        ${charGrid(i.read, i.expected, i.kind === 'ENGINE' ? 'Engine number on the bike' : 'Chassis number on the bike', 'Packing list' + (i.line ? ' · line ' + i.line : ''))}
+        ${i.kind === 'ENGINE' && !i.read ? `<div class="lbl">Engine number · packing list line ${i.line}</div><div class="mono" style="font-size:20px;font-weight:800;margin-bottom:10px">${esc(i.expected)}</div><div class="small" style="margin-bottom:10px">The worker did not type what the engine shows — go and look.</div>`
+          : charGrid(i.read, i.expected, i.kind === 'ENGINE' ? 'Engine number on the bike (typed by the worker)' : 'Chassis number on the bike', 'Packing list' + (i.line ? ' · line ' + i.line : ''))}
         <ul class="reasons">${i.reasons.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
         <div class="chips">${chips.map(c => `<button type="button">${esc(c)}</button>`).join('')}</div>
         <div class="row"><input class="inp note grow" placeholder="Note: what was found / what happens to the bike" maxlength="300">
