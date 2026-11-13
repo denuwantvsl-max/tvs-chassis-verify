@@ -8,14 +8,14 @@
 <title>Chassis Verify Office</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&family=Noto+Sans+Sinhala:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root { --bg: #090e18; --bg2: #0d1422; --card: #121a2b; --card2: #172238; --line: #22304a; --line2: #2e4063; --ink: #e9eef7; --mute: #94a3bf; --dim: #63738f;
   --brand: #3d7bfd; --brand2: #6aa0ff; --ok: #22c55e; --red: #ef4444; --amber: #f59e0b; --mono: "JetBrains Mono", ui-monospace, Consolas, monospace; --r: 16px;
   --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px); }
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
-body { background: var(--bg); color: var(--ink); font: 15px/1.45 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.45 Inter, "Noto Sans Sinhala", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 body.alert { background: #2a0507; }
 button, input, select, textarea { font: inherit; color: inherit; }
 [hidden] { display: none !important; }
@@ -33,6 +33,11 @@ nav button.on { background: var(--card2); color: var(--ink); }
 nav .cnt { background: var(--red); color: #fff; border-radius: 99px; font-size: 11px; padding: 1px 7px; }
 .who { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--mute); }
 .who b { color: var(--ink); }
+.langsw { display: flex; border: 1px solid var(--line2); border-radius: 99px; overflow: hidden; flex: none; }
+.langsw button { border: 0; background: transparent; color: var(--mute); padding: 6px 11px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.langsw button.on { background: var(--ink); color: var(--bg); }
+body.si .tbl th { text-transform: none; letter-spacing: 0; }
+body.si h2 { text-transform: none; letter-spacing: 0; }
 .icon-btn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--card); cursor: pointer; }
 @media (max-width: 760px) { nav { order: 3; width: 100%; } .who span { display: none; } }
 main { max-width: 1240px; margin: 0 auto; padding: 18px 18px calc(36px + var(--safe-b)); }
@@ -158,7 +163,7 @@ table.tbl { border-collapse: collapse; width: 100%; font-size: 13.5px; }
     <button data-v="upload">Upload packing list</button>
     <button data-v="settings" id="navSettings">Settings</button>
   </nav>
-  <div class="who"><span>Logged in as</span> <b id="whoName"></b>
+  <div class="who"><div class="langsw"><button data-l="en">English</button><button data-l="si">සිංහල</button></div><span>Logged in as</span> <b id="whoName"></b>
     <button class="icon-btn" id="btnSound" title="Alarm sound on/off"><svg class="i"><use href="#i-sound"/></svg></button>
     <button class="icon-btn" id="btnLogout" title="Log out"><svg class="i"><use href="#i-logout"/></svg></button></div>
 </header>
@@ -167,7 +172,8 @@ table.tbl { border-collapse: collapse; width: 100%; font-size: 13.5px; }
   <!-- LOGIN -->
   <section class="view login" id="v-login" hidden>
     <div class="hero"><div class="logo"><svg class="i"><use href="#i-shield"/></svg></div><h1>Chassis Verify · Office</h1>
-      <p class="sub">Stores team · packing lists, live photos and NOT OK checks</p></div>
+      <p class="sub">Stores team · packing lists, live photos and NOT OK checks</p>
+      <div class="langsw" style="width:max-content;margin:0 auto"><button data-l="en">English</button><button data-l="si">සිංහල</button></div></div>
     <div class="card stack" id="loginCard">
       <label class="f">Your name<select class="inp" id="loginName"></select></label>
       <label class="f">PIN<input class="inp pin" id="loginPin" type="password" inputmode="numeric" maxlength="8" autocomplete="off"></label>
@@ -230,7 +236,7 @@ table.tbl { border-collapse: collapse; width: 100%; font-size: 13.5px; }
   <!-- UPLOAD -->
   <section class="view" id="v-upload" hidden>
     <h1>Upload packing list</h1>
-    <p class="sub">The EC list / packing list from Excel (.xlsx, .xls) or CSV. Every bike in it must get a chassis and an engine photo.</p>
+    <p class="sub">The EC list / packing list from Excel (.xlsx, .xls) or CSV. Every bike in it must get a chassis photo and an engine number check.</p>
     <label class="drop" id="drop"><svg class="i"><use href="#i-file"/></svg><b style="color:var(--ink)" id="dropName">Choose the packing list file</b>
       <span class="small">Excel or CSV</span><input type="file" id="plFile" accept=".xlsx,.xls,.csv,.txt" hidden></label>
     <div id="upBody" class="stack" hidden style="margin-top:14px">
@@ -773,6 +779,134 @@ $('#btnTmSave').onclick = () => busy($('#btnTmSave'), async () => {
 $('#btnShare').onclick = () => busy($('#btnShare'), async () => { try { renderTeam(await api('shareSave', { emails: $('#shareEmails').value })); $('#shareErr').textContent = ''; toast('Sharing saved'); } catch (e) { $('#shareErr').textContent = e.message; } });
 $('#btnAiKey').onclick = () => busy($('#btnAiKey'), async () => { try { await api('setAiKey', { key: $('#aiKey').value.trim() }); $('#aiKey').value = ''; $('#aiErr').textContent = ''; $('#aiWarn').hidden = true; toast('AI key saved'); } catch (e) { $('#aiErr').textContent = e.message; } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && S.token) refreshLive(); });
+
+/* =====================================================================
+ * English / Sinhala. The page is written in English; every text on screen (also what is drawn later) is looked up
+ * in SI (exact text) or SI_RE (text with numbers) and swapped when Sinhala is chosen. Reasons written by the server
+ * and numbers / names stay as they are.
+ * ===================================================================== */
+const SI = {
+  'Chassis Verify · Office': 'චැසි තහවුරු · කාර්යාලය', 'TVS Lanka · Horana · Stores': 'TVS ලංකා · හොරණ · ගබඩාව',
+  'Live': 'සජීවී', 'Shipments': 'තොග', 'Upload packing list': 'ඇසුරුම් ලැයිස්තුව උඩුගත කරන්න', 'Settings': 'සැකසුම්', 'Logged in as': 'පිවිසී ඇත්තේ',
+  'Stores team · packing lists, live photos and NOT OK checks': 'ගබඩා කණ්ඩායම · ඇසුරුම් ලැයිස්තු, සජීවී ඡායාරූප සහ නොගැළපීම් පරීක්ෂාව',
+  'Your name': 'ඔබගේ නම', 'PIN': 'PIN අංකය', 'Log in': 'පිවිසෙන්න', 'Choose your name': 'ඔබගේ නම තෝරන්න', 'Loading…': 'පූරණය වෙමින්…',
+  'First-time setup': 'පළමු සැකසුම', 'Create Admin and log in': 'පරිපාලක සාදා පිවිසෙන්න', 'Choose a PIN (4 to 8 digits)': 'PIN අංකයක් තෝරන්න (ඉලක්කම් 4 සිට 8)',
+  'Updates every few seconds.': 'තත්පර කිහිපයකට වරක් යාවත්කාලීන වේ.',
+  'Updates every few seconds. Keep this page open during packing.': 'තත්පර කිහිපයකට වරක් යාවත්කාලීන වේ. ඇසුරුම් කරන අතරතුර මෙම පිටුව විවෘතව තබන්න.',
+  'AI key missing.': 'AI යතුර නැත.', 'Photos cannot be read until an Admin adds the Gemini key (Settings).': 'පරිපාලක Gemini යතුර (සැකසුම්) එක් කරන තෙක් ඡායාරූප කියවිය නොහැක.',
+  'NOT OK — waiting for your decision': 'නොගැළපේ — ඔබගේ තීරණය සඳහා රැඳී ඇත', 'Open shipments': 'විවෘත තොග', 'Latest photos': 'නවතම ඡායාරූප',
+  'Open a shipment to see every bike, correct the packing list, download the report.': 'සෑම යතුරුපැදියක්ම බැලීමට, ඇසුරුම් ලැයිස්තුව නිවැරදි කිරීමට සහ වාර්තාව බාගැනීමට තොගයක් විවෘත කරන්න.',
+  'Drive folder': 'Drive ෆෝල්ඩරය', 'Report': 'වාර්තාව', 'Close shipment': 'තොගය වසන්න', 'Re-open': 'නැවත විවෘත කරන්න',
+  'Verified': 'තහවුරුයි', 'Not checked yet': 'තවම පරීක්ෂා නොකළ', 'Held (NOT OK)': 'රඳවා ඇත (නොගැළපේ)', 'Bikes in packing list': 'ලැයිස්තුවේ යතුරුපැදි',
+  'All lines': 'සියලු පේළි', 'Not checked': 'පරීක්ෂා නොකළ', 'Held': 'රඳවා ඇත', 'All photos': 'සියලු ඡායාරූප', 'NOT OK history': 'නොගැළපීම් ඉතිහාසය',
+  'Search chassis or engine number…': 'චැසි හෝ එන්ජින් අංකය සොයන්න…',
+  'The EC list / packing list from Excel (.xlsx, .xls) or CSV. Every bike in it must get a chassis photo and an engine number check.':
+    'Excel (.xlsx, .xls) හෝ CSV ආකාරයේ EC ලැයිස්තුව / ඇසුරුම් ලැයිස්තුව. එහි සෑම යතුරුපැදියකටම චැසි ඡායාරූපයක් සහ එන්ජින් අංක පරීක්ෂාවක් අවශ්‍යයි.',
+  'Choose the packing list file': 'ඇසුරුම් ලැයිස්තු ගොනුව තෝරන්න', 'Excel or CSV': 'Excel හෝ CSV', 'Invoice no.': 'ඉන්වොයිස් අංකය', 'Container no.': 'බහාලුම් අංකය',
+  'Invoice date': 'ඉන්වොයිස් දිනය', 'Shipment name (shown to the photo team)': 'තොගයේ නම (ඡායාරූප කණ්ඩායමට පෙන්වයි)', 'Columns found in the file': 'ගොනුවේ හමු වූ තීරු',
+  'Chassis / frame number *': 'චැසි / රාමු අංකය *', 'Engine number *': 'එන්ජින් අංකය *', 'Model / description': 'මාදිලිය / විස්තරය', 'Case no.': 'පෙට්ටි අංකය',
+  'Serial no.': 'අනුක්‍රමික අංකය', '— none —': '— නැත —',
+  'I checked the amber lines against the shipping documents. Upload anyway.': 'තැඹිලි පාට පේළි නැව්ගත ලේඛන සමඟ පරීක්ෂා කළෙමි. කෙසේ වෙතත් උඩුගත කරන්න.',
+  'Create shipment': 'තොගය සාදන්න',
+  'Photo stations, office team, Drive sharing and the AI key. Admin only.': 'ඡායාරූප ස්ථාන, කාර්යාල කණ්ඩායම, Drive බෙදාගැනීම සහ AI යතුර. පරිපාලකට පමණි.',
+  'Photo stations (phones)': 'ඡායාරූප ස්ථාන (දුරකථන)', 'Office team': 'කාර්යාල කණ්ඩායම', 'Google Drive sharing': 'Google Drive බෙදාගැනීම', 'AI key': 'AI යතුර',
+  'Open the station link on the photo phone once (scan the QR code with its camera). The photo person then only types their name. “New link” stops the old one working.':
+    'ඡායාරූප දුරකථනයේ ස්ථාන සබැඳිය එක් වරක් විවෘත කරන්න (එහි කැමරාවෙන් QR කේතය ස්කෑන් කරන්න). ඉන්පසු ඡායාරූප ගන්නා අය තම නම පමණක් ටයිප් කරයි. “නව සබැඳිය” පැරණි සබැඳිය නවත්වයි.',
+  'Add station': 'ස්ථානය එක් කරන්න', 'Station name, e.g. DE packing phone 1': 'ස්ථානයේ නම, උදා: DE ඇසුරුම් දුරකථනය 1', 'Name': 'නම', 'Role': 'භූමිකාව',
+  'PIN (4–8 digits; empty = keep)': 'PIN අංකය (ඉලක්කම් 4–8; හිස් = පැරණි එකම)', 'Save person': 'පුද්ගලයා සුරකින්න',
+  'These Google accounts can open and download every shipment folder (photos + report). Google emails each new person the link. Remove an address to stop sharing.':
+    'මෙම Google ගිණුම්වලට සෑම තොග ෆෝල්ඩරයක්ම (ඡායාරූප + වාර්තාව) විවෘත කර බාගත හැක. Google එක් එක් නව පුද්ගලයාට සබැඳිය ඊමේල් කරයි. බෙදාගැනීම නැවැත්වීමට ලිපිනය ඉවත් කරන්න.',
+  'Save sharing': 'බෙදාගැනීම සුරකින්න', 'Open the photo folder': 'ඡායාරූප ෆෝල්ඩරය විවෘත කරන්න',
+  'Free Gemini key from aistudio.google.com. Stored on the server only.': 'aistudio.google.com වෙතින් නොමිලේ ලැබෙන Gemini යතුර. සේවාදායකයේ පමණක් ගබඩා වේ.',
+  'Save AI key': 'AI යතුර සුරකින්න', 'Copy link': 'සබැඳිය පිටපත් කරන්න', 'New link': 'නව සබැඳිය', 'Switch off': 'අක්‍රිය කරන්න', 'Switch on': 'සක්‍රිය කරන්න',
+  'Change': 'වෙනස් කරන්න', 'Disable': 'අක්‍රිය කරන්න', 'Enable': 'සක්‍රිය කරන්න', 'Active': 'සක්‍රියයි', 'Disabled': 'අක්‍රියයි', 'never': 'කිසිදා නැත',
+  'On': 'සක්‍රියයි', 'Off': 'අක්‍රියයි', 'Not used yet': 'තවම භාවිත කර නැත', 'Last login': 'අවසන් පිවිසුම', 'Status': 'තත්ත්වය',
+  'Photo': 'ඡායාරූපය', 'Time': 'වේලාව', 'Result': 'ප්‍රතිඵලය', 'What': 'කුමක්ද', 'Number read': 'කියවූ අංකය', 'Packing list': 'ඇසුරුම් ලැයිස්තුව', 'By': 'කවුද',
+  'Shipment': 'තොගය', 'Line': 'පේළිය', 'Chassis': 'චැසි', 'Engine': 'එන්ජිම', 'Model': 'මාදිලිය', 'Case': 'පෙට්ටිය', 'Checked': 'පරීක්ෂා කළේ', 'Photos': 'ඡායාරූප',
+  'Notes': 'සටහන්', 'Read': 'කියවූ', 'Why': 'හේතුව', 'Photo by': 'ඡායාරූපය ගත්තේ', 'Decision': 'තීරණය', 'Note': 'සටහන',
+  'OK': 'හරි', 'NOT OK': 'නොගැළපේ', 'RETAKE': 'නැවත ගන්න', 'Waiting': 'රැඳී ඇත', 'Correct': 'නිවැරදි කරන්න', 'Closed': 'වසා ඇත', 'by eye': 'ඇසින්',
+  'No photos yet.': 'තවම ඡායාරූප නැත.', 'Nothing here.': 'මෙහි කිසිවක් නැත.', 'No NOT OK bikes.': 'නොගැළපෙන යතුරුපැදි නැත.',
+  'No open shipment. Upload a packing list.': 'විවෘත තොගයක් නැත. ඇසුරුම් ලැයිස්තුවක් උඩුගත කරන්න.', 'No shipments yet.': 'තවම තොග නැත.',
+  'Engine number does not match — bike set aside': 'එන්ජින් අංකය නොගැළපේ — යතුරුපැදිය වෙනම තබා ඇත',
+  'Engine belongs to another bike — set aside': 'එන්ජිම වෙනත් යතුරුපැදියකට අයත්ය — වෙනම තබා ඇත',
+  'Packing list engine number to be checked': 'ලැයිස්තුවේ එන්ජින් අංකය පරීක්ෂා කළ යුතුය',
+  'Chassis not in packing list — set aside': 'චැසි අංකය ලැයිස්තුවේ නැත — වෙනම තබා ඇත', 'Short / wrong engraving — sent back': 'කෙටි / වැරදි කැටයම — ආපසු යවා ඇත',
+  'Double engraving — sent back': 'ද්විත්ව කැටයම — ආපසු යවා ඇත', 'Same bike photographed twice': 'එකම යතුරුපැදිය දෙවරක් ඡායාරූප ගෙන ඇත',
+  'Hold bike · release phone': 'යතුරුපැදිය රඳවන්න · දුරකථනය නිදහස් කරන්න',
+  'Note: what was found / what happens to the bike': 'සටහන: සොයාගත් දේ / යතුරුපැදියට කුමක් වේද',
+  'Chassis number on the bike': 'යතුරුපැදියේ චැසි අංකය', 'Engine number on the bike (typed by the worker)': 'යතුරුපැදියේ එන්ජින් අංකය (සේවකයා ටයිප් කළ)',
+  'Engine number checked by eye': 'එන්ජින් අංකය ඇසින් පරීක්ෂා කළා', 'Worker said: DIFFERENT': 'සේවකයා: වෙනස් අංකයක්', 'Open photo': 'ඡායාරූපය විවෘත කරන්න',
+  'The worker did not type what the engine shows — go and look.': 'එන්ජිමේ ඇති අංකය සේවකයා ටයිප් කළේ නැත — ගොස් බලන්න.',
+  'Write a short note first (or tap one of the suggestions).': 'පළමුව කෙටි සටහනක් ලියන්න (නැතහොත් යෝජනාවක් තට්ටු කරන්න).',
+  'Change a number only after checking it against the shipping documents. The old number, the new number, your name and the reason are kept.':
+    'අංකයක් වෙනස් කරන්න නැව්ගත ලේඛන සමඟ පරීක්ෂා කිරීමෙන් පසුව පමණි. පැරණි අංකය, නව අංකය, ඔබගේ නම සහ හේතුව සුරැකේ.',
+  'Chassis number': 'චැසි අංකය', 'Engine number': 'එන්ජින් අංකය', 'Reason (required)': 'හේතුව (අනිවාර්යයි)', 'Cancel': 'අවලංගු කරන්න', 'Save correction': 'නිවැරදි කිරීම සුරකින්න',
+  'Open in Drive': 'Drive තුළ විවෘත කරන්න', 'Close': 'වසන්න', 'Bike held. The photo phone can continue.': 'යතුරුපැදිය රඳවා ඇත. ඡායාරූප දුරකථනයට ඉදිරියට යා හැක.',
+  'Packing list corrected': 'ඇසුරුම් ලැයිස්තුව නිවැරදි කළා', 'Report updated in the Drive folder': 'Drive ෆෝල්ඩරයේ වාර්තාව යාවත්කාලීන කළා', 'Saved': 'සුරැකිණි',
+  'Alarm sound on/off': 'අනතුරු ශබ්දය ක්‍රියා / අක්‍රිය', 'Log out': 'පිටවන්න', 'Wrong name or PIN.': 'නම හෝ PIN අංකය වැරදියි.'
+};
+const SI_RE = [
+  [/^Updated (.+)$/, 'යාවත්කාලීන කළේ $1'],
+  [/^(\d+) \/ (\d+) verified$/, '$2 න් $1 ක් තහවුරුයි'], [/^(\d+) held$/, '$1 ක් රඳවා ඇත'], [/^(\d+) waiting$/, '$1 ක් රැඳී ඇත'],
+  [/^(\d+) not checked$/, '$1 ක් පරීක්ෂා නොකළ'], [/^Create shipment \((\d+) bikes\)$/, 'තොගය සාදන්න (යතුරුපැදි $1)'],
+  [/^(\d+) bikes$/, 'යතුරුපැදි $1'], [/^(\d+) OK$/, '$1 ක් හරි'], [/^(\d+) to check$/, 'පරීක්ෂා කළ යුතු $1'], [/^(\d+) errors$/, 'දෝෂ $1'],
+  [/^CHASSIS · line (\d+)$/, 'චැසි · පේළිය $1'], [/^ENGINE-EYE · line (\d+)$/, 'එන්ජිම (ඇසින්) · පේළිය $1'], [/^ENGINE · line (\d+)$/, 'එන්ජිම · පේළිය $1'],
+  [/^NOT OK · CHASSIS$/, 'නොගැළපේ · චැසි'], [/^NOT OK · ENGINE$/, 'නොගැළපේ · එන්ජිම'],
+  [/^Packing list · line (\d+)$/, 'ඇසුරුම් ලැයිස්තුව · පේළිය $1'], [/^Engine number · packing list line (\d+)$/, 'එන්ජින් අංකය · ඇසුරුම් ලැයිස්තුවේ පේළිය $1'],
+  [/^Chassis photo · (S\d+)$/, 'චැසි ඡායාරූපය · $1'], [/^Engine check · (S\d+)$/, 'එන්ජින් පරීක්ෂාව · $1'],
+  [/^Correct packing list · line (\d+)$/, 'ඇසුරුම් ලැයිස්තුව නිවැරදි කරන්න · පේළිය $1'], [/^Photo (S\d+)$/, 'ඡායාරූපය $1'],
+  [/^Last used (.+) by (.+)$/, 'අවසන් භාවිතය $1 · $2'], [/^Last used (.+)$/, 'අවසන් භාවිතය $1'],
+  [/^Shipment (SH\d+) created with (\d+) bikes$/, '$1 තොගය යතුරුපැදි $2 ක් සමඟ සාදන ලදී'],
+  [/^Close shipment \((\d+) not verified\)$/, 'තොගය වසන්න (තහවුරු නොකළ $1)'],
+  // NOT OK reasons written by the server
+  [/^The worker found a DIFFERENT engine number on the bike \((\w+)\)\. Packing list line (\d+) says (\w+)\.$/, 'සේවකයාට යතුරුපැදියේ වෙනස් එන්ජින් අංකයක් හමු විය ($1). ඇසුරුම් ලැයිස්තුවේ පේළිය $2: $3.'],
+  [/^The worker found a DIFFERENT engine number on the bike\. Packing list line (\d+) says (\w+)\.$/, 'සේවකයාට යතුරුපැදියේ වෙනස් එන්ජින් අංකයක් හමු විය. ඇසුරුම් ලැයිස්තුවේ පේළිය $1: $2.'],
+  [/^This chassis number is NOT in the packing list of this shipment\.$/, 'මෙම චැසි අංකය මෙම තොගයේ ඇසුරුම් ලැයිස්තුවේ නැත.'],
+  [/^Closest packing list number: line (\d+) (\w+) \((\d+) characters? different\)\.$/, 'ආසන්නතම ලැයිස්තු අංකය: පේළිය $1 $2 (අකුරු $3 ක් වෙනස්).'],
+  [/^Only (\d+) characters - a chassis number has (\d+) \(short number\)\.$/, 'අකුරු $1 ක් පමණි — චැසි අංකයක අකුරු $2 ක් තිබිය යුතුය (කෙටි අංකයකි).'],
+  [/^(\d+) characters - a chassis number has only (\d+)\.$/, 'අකුරු $1 කි — චැසි අංකයක තිබිය යුත්තේ අකුරු $2 කි.'],
+  [/^Check digit wrong: the 9th character is (\w) but for this number it must be (\w)\. At least one character is engraved wrong\.$/, 'පරීක්ෂණ අංකය වැරදියි: 9 වන අකුර $1 වුවත් එය $2 විය යුතුය. අවම වශයෙන් එක් අකුරක් වැරදියට කොටා ඇත.'],
+  [/^Line (\d+) was already verified on (.+) by (.+)\. Same bike (?:photographed|checked) twice\?$/, 'පේළිය $1 දැනටමත් $2 දින $3 විසින් තහවුරු කර ඇත. එකම යතුරුපැදිය දෙවරක්ද?'],
+  [/^Characters marked on top of each other \(position ([\d, ]+)\)\.$/, 'අකුරු එකක් මත තවෙකක් කොටා ඇත (ස්ථානය $1).'],
+  [/^Characters marked on top of each other\.$/, 'අකුරු එකක් මත තවෙකක් කොටා ඇත.'],
+  [/^Broken or incomplete marking at position ([\d, ]+)\.$/, 'ස්ථානය $1 හි කොටා ඇති අකුර කැඩී හෝ අසම්පූර්ණයි.'],
+  [/^This bike belongs to shipment (\S+) \((.+)\), line (\d+), not this one\.$/, 'මෙම යතුරුපැදිය $1 තොගයට ($2), පේළිය $3 ට අයත්ය — මෙයට නොවේ.'],
+  [/^Must start with (.+) - this starts with (\w+)\.$/, '$1 වලින් ආරම්භ විය යුතුය — මෙය $2 වලින් ආරම්භ වේ.']
+];
+let LANG = ls.get('cvo_lang') || 'en';
+function siOf(t) { if (SI[t]) return SI[t]; for (const [re, r] of SI_RE) if (re.test(t)) return t.replace(re, r); return null; }
+function trText(n) {
+  if (n.__en === undefined) n.__en = n.nodeValue;
+  const raw = n.__en, t = raw.trim();
+  if (!t) return;
+  const s = LANG === 'si' ? siOf(t) : null;
+  const want = s ? raw.replace(t, s) : raw;
+  if (n.nodeValue !== want) n.nodeValue = want;
+}
+function trAttr(el, a) {
+  const k = '__en_' + a;
+  if (el[k] === undefined) el[k] = el.getAttribute(a);
+  const s = LANG === 'si' ? siOf(el[k]) : null;
+  el.setAttribute(a, s || el[k]);
+}
+function trTree(root) {
+  if (root.nodeType === 3) return trText(root);
+  if (root.nodeType !== 1 || root.tagName === 'SCRIPT' || root.tagName === 'STYLE') return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let n; while ((n = w.nextNode())) { const p = n.parentNode && n.parentNode.tagName; if (p !== 'SCRIPT' && p !== 'STYLE' && p !== 'TEXTAREA') trText(n); }
+  [root, ...root.querySelectorAll('[placeholder],[title]')].forEach(el => { if (el.hasAttribute && el.hasAttribute('placeholder')) trAttr(el, 'placeholder'); if (el.hasAttribute && el.hasAttribute('title')) trAttr(el, 'title'); });
+}
+function setLang(l) {
+  LANG = l === 'si' ? 'si' : 'en'; ls.set('cvo_lang', LANG);
+  document.documentElement.lang = LANG; document.body.classList.toggle('si', LANG === 'si');
+  $$('.langsw button').forEach(b => b.classList.toggle('on', b.dataset.l === LANG));
+  trTree(document.body);
+}
+new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(trTree))).observe(document.body, { childList: true, subtree: true });
+const _toast = toast;
+toast = m => _toast(LANG === 'si' ? (siOf(m) || m) : m);
+$$('.langsw button').forEach(b => b.onclick = () => setLang(b.dataset.l));
+setLang(LANG);
 boot();
 </script>
 </body>
