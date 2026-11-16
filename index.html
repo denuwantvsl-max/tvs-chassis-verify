@@ -284,6 +284,11 @@ table.tbl { border-collapse: collapse; width: 100%; font-size: 13.5px; }
       <div class="err" id="tmErr"></div>
       <div><button class="btn primary" id="btnTmSave">Save person</button></div>
     </div>
+    <h2>Test period</h2>
+    <div class="card stack">
+      <label class="check"><input type="checkbox" id="lockMode" style="accent-color:var(--brand)"><span><b>Lock the photo phone after a NOT OK</b><br><span class="small muted">Off during the test period: every NOT OK still alarms here on the Live page, but the photo phone can carry on. Switch on when the system goes into normal use.</span></span></label>
+      <div class="err" id="lockErr"></div>
+    </div>
     <h2>Google Drive sharing</h2>
     <div class="card stack">
       <p class="small muted" style="margin:0">These Google accounts can open and download every shipment folder (photos + report). Google emails each new person the link. Remove an address to stop sharing.</p>
@@ -703,6 +708,7 @@ async function doUpload() {
 /* ---------------- settings ---------------- */
 async function showSettings() {
   show('settings');
+  $('#lockMode').checked = !!(S.home && S.home.settings && S.home.settings.lockOnNotOk);
   $('#stations').innerHTML = '<div class="empty"><span class="spin"></span></div>';
   try {
     const [st, tm] = await Promise.all([api('stations'), api('team')]);
@@ -777,6 +783,10 @@ $('#btnTmSave').onclick = () => busy($('#btnTmSave'), async () => {
   catch (e) { $('#tmErr').textContent = e.message; }
 });
 $('#btnShare').onclick = () => busy($('#btnShare'), async () => { try { renderTeam(await api('shareSave', { emails: $('#shareEmails').value })); $('#shareErr').textContent = ''; toast('Sharing saved'); } catch (e) { $('#shareErr').textContent = e.message; } });
+$('#lockMode').onchange = async e => {
+  try { const set = await api('settingSave', { key: 'LOCK_ON_NOT_OK', value: e.target.checked ? 'yes' : 'no' }); if (S.home) S.home.settings = set; toast(set.lockOnNotOk ? 'Phones now lock after a NOT OK' : 'Test period: phones do not lock'); $('#lockErr').textContent = ''; }
+  catch (er) { e.target.checked = !e.target.checked; $('#lockErr').textContent = er.message; }
+};
 $('#btnAiKey').onclick = () => busy($('#btnAiKey'), async () => { try { await api('setAiKey', { key: $('#aiKey').value.trim() }); $('#aiKey').value = ''; $('#aiErr').textContent = ''; $('#aiWarn').hidden = true; toast('AI key saved'); } catch (e) { $('#aiErr').textContent = e.message; } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && S.token) refreshLive(); });
 
@@ -843,6 +853,9 @@ const SI = {
   'Chassis number': 'චැසි අංකය', 'Engine number': 'එන්ජින් අංකය', 'Reason (required)': 'හේතුව (අනිවාර්යයි)', 'Cancel': 'අවලංගු කරන්න', 'Save correction': 'නිවැරදි කිරීම සුරකින්න',
   'Open in Drive': 'Drive තුළ විවෘත කරන්න', 'Close': 'වසන්න', 'Bike held. The photo phone can continue.': 'යතුරුපැදිය රඳවා ඇත. ඡායාරූප දුරකථනයට ඉදිරියට යා හැක.',
   'Packing list corrected': 'ඇසුරුම් ලැයිස්තුව නිවැරදි කළා', 'Report updated in the Drive folder': 'Drive ෆෝල්ඩරයේ වාර්තාව යාවත්කාලීන කළා', 'Saved': 'සුරැකිණි',
+  'Test period': 'පරීක්ෂණ කාලය', 'Lock the photo phone after a NOT OK': 'නොගැළපීමකින් පසු ඡායාරූප දුරකථනය අගුළු දමන්න',
+  'Off during the test period: every NOT OK still alarms here on the Live page, but the photo phone can carry on. Switch on when the system goes into normal use.':
+    'පරීක්ෂණ කාලයේදී අක්‍රියයි: සෑම නොගැළපීමක්ම සජීවී පිටුවේ අනතුරු අඟවයි, නමුත් ඡායාරූප දුරකථනයට ඉදිරියට යා හැක. පද්ධතිය සාමාන්‍ය භාවිතයට යන විට සක්‍රිය කරන්න.',
   'Alarm sound on/off': 'අනතුරු ශබ්දය ක්‍රියා / අක්‍රිය', 'Log out': 'පිටවන්න', 'Wrong name or PIN.': 'නම හෝ PIN අංකය වැරදියි.'
 };
 const SI_RE = [
@@ -871,7 +884,11 @@ const SI_RE = [
   [/^Characters marked on top of each other\.$/, 'අකුරු එකක් මත තවෙකක් කොටා ඇත.'],
   [/^Broken or incomplete marking at position ([\d, ]+)\.$/, 'ස්ථානය $1 හි කොටා ඇති අකුර කැඩී හෝ අසම්පූර්ණයි.'],
   [/^This bike belongs to shipment (\S+) \((.+)\), line (\d+), not this one\.$/, 'මෙම යතුරුපැදිය $1 තොගයට ($2), පේළිය $3 ට අයත්ය — මෙයට නොවේ.'],
-  [/^Must start with (.+) - this starts with (\w+)\.$/, '$1 වලින් ආරම්භ විය යුතුය — මෙය $2 වලින් ආරම්භ වේ.']
+  [/^Must start with (.+) - this starts with (\w+)\.$/, '$1 වලින් ආරම්භ විය යුතුය — මෙය $2 වලින් ආරම්භ වේ.'],
+  [/^Could be (.+) - it looks like line (\d+) (\w+)\. Take a closer, straight photo\.$/, '$1 විය හැක — එය පේළිය $2 $3 ලෙස පෙනේ. වඩා ළඟින්, කෙළින් ඡායාරූපයක් ගන්න.'],
+  [/^Read the same way (\d+) times: the engraving itself may be wrong\. Office: please look at the plate\.$/, 'වාර $1 ක්ම එලෙසම කියවිණි: කැටයමම වැරදි විය හැක. කාර්යාලය: කරුණාකර තහඩුව බලන්න.'],
+  [/^Looks like line (\d+) \((.+) look alike\), which was already verified on (.+) by (.+)\. Same bike photographed twice\?$/, 'පේළිය $1 ලෙස පෙනේ ($2 සමාන පෙනුමැති අකුරු), එය දැනටමත් $3 දින $4 විසින් තහවුරු කර ඇත. එකම යතුරුපැදිය දෙවරක්ද?'],
+  [/^Phones now lock after a NOT OK$/, 'දැන් නොගැළපීමකින් පසු දුරකථන අගුළු වේ'], [/^Test period: phones do not lock$/, 'පරීක්ෂණ කාලය: දුරකථන අගුළු නොවේ']
 ];
 let LANG = ls.get('cvo_lang') || 'en';
 function siOf(t) { if (SI[t]) return SI[t]; for (const [re, r] of SI_RE) if (re.test(t)) return t.replace(re, r); return null; }

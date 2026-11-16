@@ -195,7 +195,7 @@ const CONFIG = { API_URL: 'https://script.google.com/macros/s/AKfycby5PiCPb6Ffrc
 const params = new URLSearchParams(location.search);
 if (params.has('local')) CONFIG.API_URL = '/api';
 const SHARP_MIN = 7, DARK_MAX = 38, GLARE_MAX = 0.06;
-const CROP_W = 1024;                     // width of the plate image sent for the verdict (small = fast)
+const CROP_W = 900;                      // width of the plate image sent for the verdict (small = fast; 17 chars ≈ 50 px each)
 const LS = { key: 'cvs_station', name: 'cvs_name', plate: 'cvs_plate', lang: 'cvs_lang', queue: 'cvs_queue' };
 const S = { key: '', name: '', station: null, shipments: [], ship: null, line: null, chassisScan: '', stream: null, track: null, torch: false, busy: false,
   plate: 'h', waiting: '', poll: null, autoT: null, retakes: 0, lang: 'en', queue: [], uploading: false, last: null };
@@ -228,7 +228,8 @@ const TXT = {
     offline: 'No internet connection. Check the signal and try again.', slow: 'The server took too long. Try again.',
     busy: 'The AI is busy. Wait a few seconds and take the photo again.', limit: "Today's free AI limit is used up. Tell the stores office.",
     closed: 'This shipment is closed. Choose another one.', again: 'Photograph the chassis number of this bike again first.',
-    locked: 'This phone is waiting for the stores office to check a NOT OK bike.'
+    locked: 'This phone is waiting for the stores office to check a NOT OK bike.',
+    notOkTest: 'The stores office has been told. Test period: the phone is not locked — keep this bike aside and continue.'
   },
   si: {
     appTitle: 'ඡායාරූප යෙදුම', notSetup: 'මෙම දුරකථනය තවම සකසා නැත.',
@@ -256,7 +257,8 @@ const TXT = {
     offline: 'අන්තර්ජාල සම්බන්ධතාවයක් නැත. සංඥාව පරීක්ෂා කර නැවත උත්සාහ කරන්න.', slow: 'සේවාදායකය ප්‍රමාද විය. නැවත උත්සාහ කරන්න.',
     busy: 'AI පද්ධතිය කාර්යබහුලයි. තත්පර කිහිපයක් රැඳී නැවත ඡායාරූපය ගන්න.', limit: 'අද දිනයේ නොමිලේ ලැබෙන AI සීමාව අවසන්. ගබඩා කාර්යාලයට දන්වන්න.',
     closed: 'මෙම තොගය වසා ඇත. වෙනත් එකක් තෝරන්න.', again: 'පළමුව මෙම යතුරුපැදියේ චැසි අංකය නැවත ඡායාරූප ගන්න.',
-    locked: 'NOT OK යතුරුපැදියක් ගබඩා කාර්යාලය පරීක්ෂා කරන තෙක් මෙම දුරකථනය රැඳී සිටී.'
+    locked: 'NOT OK යතුරුපැදියක් ගබඩා කාර්යාලය පරීක්ෂා කරන තෙක් මෙම දුරකථනය රැඳී සිටී.',
+    notOkTest: 'ගබඩා කාර්යාලයට දැනුම් දී ඇත. පරීක්ෂණ කාලය: දුරකථනය අගුළු නොවේ — මෙම යතුරුපැදිය වෙනම තබා ඉදිරියට යන්න.'
   }
 };
 /* Reasons from the server come with a code + values; shown in the chosen language. */
@@ -278,6 +280,10 @@ const REASONS = {
   WRONG_SHIPMENT: { en: 'This bike belongs to shipment {ship} ({name}), line {line} — not this one.', si: 'මෙම යතුරුපැදිය {ship} තොගයට ({name}), පේළිය {line} ට අයත්ය — මෙයට නොවේ.' },
   NOT_IN_LIST: { en: 'This chassis number is NOT in the packing list of this shipment.', si: 'මෙම චැසි අංකය මෙම තොගයේ ඇසුරුම් ලැයිස්තුවේ නැත.' },
   CLOSEST: { en: 'Closest packing list number: line {line} {chassis} ({d} character(s) different).', si: 'ආසන්නතම ලැයිස්තු අංකය: පේළිය {line} {chassis} (අකුරු {d} ක් වෙනස්).' },
+  LOOKALIKE: { en: 'Could be {pairs} — it looks like line {line} {chassis}. Take a closer, straight photo.',
+    si: '{pairs} විය හැක — එය පේළිය {line} {chassis} ලෙස පෙනේ. වඩා ළඟින්, කෙළින් ඡායාරූපයක් ගන්න.' },
+  LOOKALIKE_REPEAT: { en: 'Read the same way {n} times: the engraving itself may be wrong. The office will look at the plate.',
+    si: 'වාර {n} ක්ම එලෙසම කියවිණි: කැටයමම වැරදි විය හැක. කාර්යාලය තහඩුව පරීක්ෂා කරනු ඇත.' },
   READS_DIFFER: { en: 'The two readings of this photo did not agree. Take a sharper, closer photo.', si: 'මෙම ඡායාරූපයේ කියවීම් දෙක එකඟ නොවීය. වඩා පැහැදිලි, ළඟින් ඡායාරූපයක් ගන්න.' },
   ENGINE_EYE_NO: { en: 'A DIFFERENT engine number is on the bike{seen}. Packing list line {line}: {engine}.', si: 'යතුරුපැදියේ වෙනස් එන්ජින් අංකයක් ඇත{seen}. ඇසුරුම් ලැයිස්තුවේ පේළිය {line}: {engine}.',
     seen: a => a.seen ? { en: ' (' + a.seen + ')', si: ' (' + a.seen + ')' } : { en: '', si: '' } }
@@ -495,7 +501,7 @@ function processImage(src, rect, vertical) {
   const W = src.width, H = src.height, r = rect ? expandRect(rect, W, H, vertical) : { x: 0, y: 0, w: W, h: H };
   const quality = measure(src, rect ? { x: Math.max(0, rect.x), y: Math.max(0, rect.y), w: Math.min(W, rect.w), h: Math.min(H, rect.h) } : r, vertical);
   const crop = enhance(drawRegion(src, r, vertical, Math.min(CROP_W, vertical ? r.h : r.w) || CROP_W));
-  return { crop: crop.toDataURL('image/jpeg', .82), quality, src };
+  return { crop: crop.toDataURL('image/jpeg', .8), quality, src };
 }
 function evidenceImages(src) {
   const ev = evidence(src), t = canvas(320, 320 * ev.height / ev.width);
@@ -505,9 +511,9 @@ function evidenceImages(src) {
 
 /* ---------------- evidence upload queue (kept on the phone until the server has it) ---------------- */
 function saveQueue() { if (!ls.set(LS.queue, JSON.stringify(S.queue))) ls.set(LS.queue, JSON.stringify(S.queue.slice(-3))); }
-function queueEvidence(scanId, src) {
+function queueEvidence(scanId, src, phoneSeconds) {
   setTimeout(() => {                         // after the result is on screen
-    try { const e = evidenceImages(src); S.queue.push({ scanId, photo: e.photo, thumb: e.thumb, key: S.key }); saveQueue(); renderQueue(); pumpQueue(); } catch (err) { /* */ }
+    try { const e = evidenceImages(src); S.queue.push({ scanId, photo: e.photo, thumb: e.thumb, key: S.key, phoneSeconds }); saveQueue(); renderQueue(); pumpQueue(); } catch (err) { /* */ }
   }, 50);
 }
 async function pumpQueue() {
@@ -516,7 +522,7 @@ async function pumpQueue() {
   while (S.queue.length) {
     const it = S.queue[0];
     try {
-      await api('stEvidence', { scanId: it.scanId, photo: it.photo, thumb: it.thumb, station: it.key || S.key }, 90000);
+      await api('stEvidence', { scanId: it.scanId, photo: it.photo, thumb: it.thumb, phoneSeconds: it.phoneSeconds, station: it.key || S.key }, 90000);
       S.queue.shift(); saveQueue();
     } catch (e) {
       if (e.net) { S.uploading = false; renderQueue(); setTimeout(pumpQueue, 15000); return; }   // no signal: try again later
@@ -556,7 +562,7 @@ async function runScan(src, rect, vertical, force) {
     r.phoneSeconds = Math.round((performance.now() - t0) / 100) / 10;
     r.thumb = img.crop;
     if (r.counts) Object.assign(S.ship, { verified: r.counts.verified, units: r.counts.units });
-    queueEvidence(r.id, src);
+    queueEvidence(r.id, src, r.phoneSeconds);
     showResult(r);
   } catch (e) {
     $('#proc').hidden = true;
@@ -669,12 +675,17 @@ function showNotOk(r) {
     paint('NOT OK', ['x', T('notOk'), T('notOkSub')],
       `<div class="panel">${charGrid(r.read, r.expected, r.chars, (eng ? T('engineNo') : T('chassisNo')) + ' · ' + T('onBike'), T('packingList') + (r.expectedLine ? ' · ' + T('line') + ' ' + r.expectedLine : ''))}</div>
       <div class="panel"><ul class="reasons">${r.reasons.map(x => `<li class="${x.level === 'info' ? 'info' : ''}">${icon(x.level === 'info' ? 'info' : 'x')}<span>${esc(reasonText(x))}</span></li>`).join('')}</ul></div>
-      <div id="waitSlot">${waitBox()}</div>${timing(r)}`);
+      ${r.lockPhone === false ? `<div class="wait">${icon('info')}<span>${esc(T('notOkTest'))}</span></div>
+        <div class="stack"><button class="btn white" id="rNext">${icon('camera')}${esc(T('nextBike'))}</button>
+        <button class="btn ghost" id="rRetake" style="color:#fff;border-color:rgba(255,255,255,.4)">${esc(T('retakeBtn'))}</button></div>`
+        : `<div id="waitSlot">${waitBox()}</div>`}${timing(r)}`);
+    if ($('#rNext')) $('#rNext').onclick = () => startBike();
+    if ($('#rRetake')) $('#rRetake').onclick = () => openCamera();
   };
   draw(); S.last = () => { draw(); if (S.decided) showDecision(S.decided); };
   S.decided = null;
   sound('NOT OK');
-  startPolling();
+  if (r.lockPhone !== false) startPolling();
 }
 
 function waitBox() { return `<div class="wait"><span class="spin sm"></span><span>${esc(T('wait'))}</span></div>`; }
